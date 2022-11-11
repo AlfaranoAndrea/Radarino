@@ -1,0 +1,2 @@
+radarino_sub
+-DCATKIN_DEVEL_PREFIX=/home/portatile/Desktop/Radarino/devel -DCMAKE_INSTALL_PREFIX=/home/portatile/Desktop/Radarino/install -G Unix Makefiles

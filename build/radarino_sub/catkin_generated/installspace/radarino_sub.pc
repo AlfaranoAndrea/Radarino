@@ -1,0 +1,8 @@
+prefix=/home/portatile/Desktop/Radarino/install
+
+Name: radarino_sub
+Description: Description of radarino_sub
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
