@@ -5,18 +5,6 @@
 #define MAPPATURA_GRADI 2048
 #define STEP_PER_RIVOLUZIONE 2048
 
-#include <ros.h>
-#include <ros/time.h>
-#include <sensor_msgs/PointCloud.h>
- 
-ros::NodeHandle  nh;                            // NodeHandle di radarino
-sensor_msgs::PointCloud sonar_msg;              // le misure sono inviate a Rviz tramite messaggio nuvola di punti
-ros::Publisher pub_sonar( "sonar", &sonar_msg); // message publisher
-geometry_msgs::Point32 points_storage[1];       // per risparmiare memoria ogni messaggio contiene un singolo punto
-
-char frameid[] ="map";                          // nome del frame id di Rviz
-unsigned long publisher_timer;
-
 // Dichiaro l'oggetto stepper
 Stepper myStepper(STEP_PER_RIVOLUZIONE, 11, 9, 10, 8);
 
@@ -30,15 +18,9 @@ int distance;    // contiene la distanza dal primo ostacolo incontrato
 void setup() {
   pinMode(pTRIG, OUTPUT);
   pinMode(pECHO, INPUT);
+  Serial.begin(9600);
   myStepper.setSpeed(5);
   // inizializzo il messaggio di tipo sonar
-  sonar_msg.header.seq = 0;
-  sonar_msg.header.frame_id =  frameid; 
-  sonar_msg.points = points_storage; // inizializzo il primo messaggio sonar
-  sonar_msg.points_length = 1;       // e setto la lunghezza a 1
-  // inizializzo ros
-  nh.initNode();
-  nh.advertise(pub_sonar);  
 }
 
 // La funzione calcola la distanza dal primo ostacolo incontrato
@@ -69,22 +51,10 @@ void azzera_triggers(){
   // risettto il ping del trigger a low
   digitalWrite(pTRIG, LOW);
 }
-
-void sendRoscordinates (float x_value, float y_value){
-  points_storage[0].x = x_value;        //decompongo la misura su x and y 
-  points_storage[0].y = y_value;       //decompongo la misura su x and y 
-  //salvo la misura e la publico
-  sonar_msg.points[0].x = points_storage[0].x;    
-  sonar_msg.points[0].y = points_storage[0].y;    
-  sonar_msg.header.stamp = nh.now();
-  pub_sonar.publish(&sonar_msg);  
-  publisher_timer = millis();
-}
-
 // La funzione fa ruotare lo stepper e calcola la distanza dal primo ostacolo incontrato
 void move_and_calculate_distance(int gradi){
-  float x_value= -1;
-  float y_value= -1;
+  int x_value= -1;
+  int y_value= -1;
   
   // muove lo stepper di un grado
   myStepper.step(gradi);
@@ -100,7 +70,11 @@ void move_and_calculate_distance(int gradi){
      x_value = distance*cos(6.2831 -angle);        //decompongo la misura su x and y 
      y_value = distance* sin(6.2831 -angle);       //decompongo la misura su x and y 
   }
-  sendRoscordinates(x_value, y_value);
+  
+Serial.print(x_value);
+Serial.print(",");
+Serial.print(y_value);
+Serial.print("\n");
   count = count + 1;
   // se il numero di step ha raggiunto il numero necessario per terminare la rivoluzione 
   // azzera il conteggio e imposta la flag ad 1 per per invertire la mozione allo stepper
@@ -117,6 +91,5 @@ void loop() {
   // la funzione fa ruotare lo stepper e calcola i gradi
   flag == 0 ? move_and_calculate_distance(gradi) : move_and_calculate_distance(-gradi);
   // Applico un delay di 50ms una volta che viene completata una rivoluzione
-  nh.spinOnce(); // chiama il callback
-  delay(5);
+  delay(50);
 }
